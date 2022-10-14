@@ -14,8 +14,8 @@ import json
 import pdb
 
 # ============================================================================================================================
-def apiKey(): #decoding
-    return "RsxNAeIynUGQwr0R7jl77ZXfvWjtz5EaJ7dKi/gGCAeNdyiR3+L23lLmY7cLFUb/GM3WzkFH+KAtu2oEz9q2Kw=="
+def apiKey():
+    return "RsxNAeIynUGQwr0R7jl77ZXfvWjtz5EaJ7dKi%2FgGCAeNdyiR3%2BL23lLmY7cLFUb%2FGM3WzkFH%2BKAtu2oEz9q2Kw%3D%3D"
 def getParams(routeId) :
     return {'serviceKey' : apiKey(), 'routeId' : routeId} 
 def apiDefaultUrl():
@@ -31,30 +31,23 @@ def getBasePath(account_Id):
 def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) :
     basePath = getBasePath(account_Id)
     
-    try :
-        callCnt += 1
-        response = getapiUrlByParam(routeId)
-        compTime = time.time() - reqTime
-        compTimeStr = "compTime:"+str(compTime)+"sec"
-        
-        json_data = json.loads(json.dumps(xmltodict.parse(response.content)))
-        
-        print(json_data)
-
-        # setting dataframe view wider to see long item
-        pd.set_option('display.max_colwidth', None)
-
-        # from json file to dataframe
-        df = pd.DataFrame(json_data['response']['msgBody']["busLocationList"])
-        print(df.head())
-        
+    callCnt += 1
+    response = getapiUrlByParam(routeId)
+    compTime = time.time() - reqTime
+    compTimeStr = "compTime:"+str(compTime)+"sec"
     
-    except Exception as es:
-        if callCnt < 5 :
-            print("\n\nRetry - callCnt :" , str(callCnt))
-            getapiCall(account_Id, callCnt, routeNum, routeId, reqTime)
-        else :
-            print(str(es) + "\n\n")
+    json_data = json.loads(json.dumps(xmltodict.parse(response.content)))
+    
+    print(json_data)
+    
+
+    # setting dataframe view wider to see long item
+    pd.set_option('display.max_colwidth', None)
+
+    # from json file to dataframe
+    df = pd.DataFrame(json_data['response']['msgBody']["busLocationList"])
+    print(df.head())
+
 # ========== main
 
 def main():
