@@ -116,8 +116,6 @@ def main():
         # 병합
         concatAllDataframesPerDay(account_Id, key, hourToConcat)
     
-  
-
 
 if __name__ == '__main__':
     main()
