@@ -34,6 +34,8 @@ def getBasePath(account_Id):
     return "/home/" + account_Id + "/gbisOpenApi/realtimePosition" ## changing the account ID when you use it on the other PC
 def getResultPath(basePath, routeNum, dirName):
     return basePath+'/results_pos/'+routeNum+'/'+dirName
+def SavedftoCSVFile(df, basePath, routeNum, dirName, compTimeStr):
+    df.to_csv(getResultPath(basePath, routeNum, dirName)+"/"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+"_"+routeNum+"_rTimeBusPos_"+compTimeStr+'.csv', encoding='utf-8-sig', index=False)
 
 def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) : #routeNum : 버스번호 , routeId : Api 서버 상 버스ID
     basePath = getBasePath(account_Id)
@@ -54,17 +56,23 @@ def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) : #routeNum : �
 
         # from json file to dataframe
         df = pd.DataFrame(json_data['response']['msgBody']["busLocationList"])
-        csv_file_name = datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "_" + routeNum + "_rTimeBusPos_" + compTimeStr + '.csv'
-        df.to_csv(getResultPath(basePath, routeNum, dirName) + "/"+ csv_file_name, encoding = 'utf-8-sig', index=False)
+        SavedftoCSVFile(df, basePath, routeNum, dirName, compTimeStr)
         print(df.head())
         
-    
+    except ValueError as ValueErrorMessage :
+        if str(ValueErrorMessage) == 'If using all scalar values, you must pass an index' : # Case : if there is only 1 bus left (less than 2)
+            df = pd.DataFrame(json_data['response']['msgBody']["busLocationList"], index=[0]) # type(df) is dict
+            SavedftoCSVFile(df, basePath, routeNum, dirName, compTimeStr)
+            
     except Exception as es:
         if callCnt < 5 :
             print("\n\nRetry - callCnt :" , str(callCnt))
             getapiCall(account_Id, callCnt, routeNum, routeId, reqTime)
         else :
-            print(str(es) + "\n\n")
+            errorReport = open(getResultPath(basePath, routeNum, dirName)+"/"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+"_"+routeNum+"_rTimeBusPos_"+"errorReport.txt", 'w')
+            errorReport.write(str(json_data['response']))
+            errorReport.close()
+            
 
 # 경로를 받아서 모든 csv 파일의 리스트를 반환하는 함수
 def getAllCsvList(resultPath):
