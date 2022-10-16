@@ -79,7 +79,7 @@ def getAllCsvList(resultPath):
     files = glob.glob(resultPath+'/*.csv')
     return files
 
-# getAllFiles로 받아온 files를 병합
+# getAllCsvList로 받아온 files를 병합
 def concatAllDataframes(resultPath):
     files = getAllCsvList(resultPath)
     dataframes = [pd.read_csv(f) for f in files]
