@@ -58,7 +58,7 @@ def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) : #routeNum : ë²
         print(df.head())
         
     except ValueError as ValueErrorMessage :
-        if str(ValueErrorMessage) == 'If using all scalar values, you must pass an index' :
+        if str(ValueErrorMessage) == 'If using all scalar values, you must pass an index' : # Case : if there is only 1 bus left (less than 2)
             df = pd.DataFrame(json_data['response']['msgBody']["busLocationList"], index=[0]) # type(df) is dict
             SavedftoCSVFile(df, basePath, routeNum, dirName, compTimeStr)
             
@@ -68,7 +68,7 @@ def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) : #routeNum : ë²
             getapiCall(account_Id, callCnt, routeNum, routeId, reqTime)
         else :
             errorReport = open(getResultPath(basePath, routeNum, dirName)+"/"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+"_"+routeNum+"_rTimeBusPos_"+"errorReport.txt", 'w')
-            errorReport.write(json_data['response'])
+            errorReport.write(str(json_data['response']))
             errorReport.close()
             
 # ========== main
