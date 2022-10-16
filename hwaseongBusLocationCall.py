@@ -42,9 +42,6 @@ def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) :
         
         print(json_data)
 
-        # setting dataframe view wider to see long item
-        pd.set_option('display.max_colwidth', None)
-
         # from json file to dataframe
         df = pd.DataFrame(json_data['response']['msgBody']["busLocationList"])
         print(df.head())
@@ -56,6 +53,18 @@ def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) :
             getapiCall(account_Id, callCnt, routeNum, routeId, reqTime)
         else :
             print(str(es) + "\n\n")
+
+# Read All Files in PATH
+def getAllFiles(basePath):
+    onlyfiles = [f for f in os.listdir(basePath) if os.isfile(os.join(basePath, f)) and not f.startswith(".")]
+    return onlyfiles
+# Read All CSV Files in PATH
+def readAllCsv(basePath,files):
+    dataframes = [pd.read_csv(os.join(basePath,f)) for f in files]
+    return dataframes
+def concatAllDataframes(dataframes):
+    return pd.concat(dataframes, axis=0, ignore_index=True)
+
 # ========== main
 
 def main():
@@ -65,7 +74,6 @@ def main():
     for key,value in busIdDict.items() :
         reqTime = time.time()
         getapiCall(account_Id, 0, key, value, reqTime)
-    
     
     #response = getapiUrlByParam()
 
