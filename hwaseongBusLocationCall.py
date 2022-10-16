@@ -1,5 +1,7 @@
 '''call information using api key'''
 
+from email.encoders import encode_noop
+from locale import D_FMT
 import urllib.request
 import urllib.parse
 import json
@@ -21,21 +23,29 @@ def getParams(routeId) :
 def apiDefaultUrl():
     return "http://apis.data.go.kr/6410000/buslocationservice/getBusLocationList"
 
-def NewDirName():
+def getNewDirName():
     return str(datetime.date.today())
 def getapiUrlByParam(routeId):
     return requests.get(apiDefaultUrl(), params=getParams(routeId))
 def getBasePath(account_Id):
-    return "/home/" + account_Id + "/gbisOpenApi/realtimePosition"
+    return "/home/" + account_Id + "/gbisOpenApi/realtimePosition" ## changing the account ID when you use it on the other PC
+def getResultPath(basePath, routeNum, dirName):
+    return basePath+'/results_pos/'+routeNum+'/'+dirName
 
-def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) :
+def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) : #routeNum : 버스번호 , routeId : Api 서버 상 버스ID
     basePath = getBasePath(account_Id)
     
+    
+    
     try :
+        dirName=getNewDirName()
+        if not os.path.exists(getResultPath(basePath, routeNum, dirName)):
+            os.makedirs(getResultPath(basePath, routeNum, dirName))
+            
         callCnt += 1
         response = getapiUrlByParam(routeId)
-        compTime = time.time() - reqTime
-        compTimeStr = "compTime:"+str(compTime)+"sec"
+        compTime = round((time.time() - reqTime), 5)
+        compTimeStr = "compTime-"+str(compTime)+"sec"
         
         json_data = json.loads(json.dumps(xmltodict.parse(response.content)))
         
@@ -46,6 +56,7 @@ def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) :
 
         # from json file to dataframe
         df = pd.DataFrame(json_data['response']['msgBody']["busLocationList"])
+        df.to_csv(getResultPath(basePath, routeNum, dirName)+"/"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+"_"+routeNum+"_rTimeBusPos_"+compTimeStr+'.csv', encoding='utf-8-sig', index=False)
         print(df.head())
         
     
@@ -58,7 +69,7 @@ def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) :
 # ========== main
 
 def main():
-    account_Id = "hyun_temp"
+    account_Id = "bleubulblight" # changing the account ID when you use it on the other PC
     busIdDict = {"1002":"233000140", "1008":"233000125"} #추후 matchingTable로 변환 예정
     
     for key,value in busIdDict.items() :
