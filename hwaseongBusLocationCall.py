@@ -83,31 +83,38 @@ def getAllCsvList(resultPath):
 def concatAllDataframes(resultPath):
     files = getAllCsvList(resultPath)
     dataframes = [pd.read_csv(f) for f in files]
-    # file이 없을 경우 메시지 출력하고 함수 종료
+    
+    # dataframes 에 데이터가 기록된 querytime column 추가, 이때 값은 파일명에서 추출
+    for i in range(len(dataframes)):
+        dataframes[i]['querytime'] = files[i].split('/')[-1].split('_')[0]
+    
+    dataframes = pd.concat(dataframes, ignore_index=True)
+
     if len(dataframes) == 0 :
         print("There is no file to merge")
         return
-    return pd.concat(dataframes, axis=0, ignore_index=True)
+    
+    return dataframes
 
 # 병합할 시각 지정
-def judgeTimeToConcat(MERGE_HOUR):
-    if datetime.datetime.now().hour == MERGE_HOUR and datetime.datetime.now().minute == 0 : 
+def judgeConcatOrNot(timeToConcat):
+    if datetime.datetime.now().hour == timeToConcat and datetime.datetime.now().minute == 0 : 
         return True
     else :
         return False
 
 # 하루에 한번 병합 시각을 지정하여, 폴더 내의 병합 시행
-def concatAllDataframesPerDay(account_Id, routeNum, hourToConcat):
+def concatAllDataframesPerDay(account_Id, routeNum, timeToConcat):
     basePath = getBasePath(account_Id)
     dirName=getNewDirName()
     resultPath = getResultPath(basePath, routeNum, dirName)
-    concatCsvFileName = resultPath + "/" + datetime.datetime.now().strftime("%Y%m%d-%H") + "_" + routeNum + "_rTimeBusPos.csv"
+    concatCsvFileName = resultPath + "/" + datetime.datetime.now().strftime("%Y%m%d") + "_merged_" + routeNum + "_rTimeBusPos.csv"
     if not os.path.exists(concatCsvFileName):
-        # if judgeTimeToConcat(hourToConcat) :
+        # if judgeConcatOrNot(timeToConcat) :    # < 만약 하루에 한번 실행할 경우, 주석처리 된 조건문을 추가.
         df = concatAllDataframes(resultPath)
         df.to_csv(concatCsvFileName, encoding = 'utf-8-sig', index=False)
         print(df.head())
-        print(f"All files are merged at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        print(f"All files for {routeNum} are merged at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
 
 # ========== main
@@ -115,15 +122,14 @@ def concatAllDataframesPerDay(account_Id, routeNum, hourToConcat):
 def main():
     account_Id = "hoonyong" # changing the account ID when you use it on the other PC
     busIdDict = {"1002":"233000140", "1008":"233000125"} #추후 matchingTable로 변환 예정
-    hourToConcat = 3  # 몇시에 파일을 병합?
+    timeToConcat = 3  # 몇시에 파일을 병합?
 
     for key,value in busIdDict.items() :
         reqTime = time.time()
         getapiCall(account_Id, 0, key, value, reqTime)
 
         # 병합
-        concatAllDataframesPerDay(account_Id, key, hourToConcat)
-    
+        concatAllDataframesPerDay(account_Id, key, timeToConcat)
 
 if __name__ == '__main__':
     main()
