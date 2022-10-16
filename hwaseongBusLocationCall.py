@@ -1,6 +1,8 @@
 '''call information using api key'''
 
+from asyncore import read
 from email.encoders import encode_noop
+from lib2to3.pytree import BasePattern
 from locale import D_FMT
 import urllib.request
 import urllib.parse
@@ -14,6 +16,7 @@ import requests
 import xmltodict
 import json
 import pdb
+import glob
 
 # ============================================================================================================================
 def apiKey(): #decoding
@@ -35,8 +38,6 @@ def getResultPath(basePath, routeNum, dirName):
 def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) : #routeNum : 버스번호 , routeId : Api 서버 상 버스ID
     basePath = getBasePath(account_Id)
     
-    
-    
     try :
         dirName=getNewDirName()
         if not os.path.exists(getResultPath(basePath, routeNum, dirName)):
@@ -53,7 +54,8 @@ def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) : #routeNum : �
 
         # from json file to dataframe
         df = pd.DataFrame(json_data['response']['msgBody']["busLocationList"])
-        df.to_csv(getResultPath(basePath, routeNum, dirName)+"/"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+"_"+routeNum+"_rTimeBusPos_"+compTimeStr+'.csv', encoding='utf-8-sig', index=False)
+        csv_file_name = datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "_" + routeNum + "_rTimeBusPos_" + compTimeStr + '.csv'
+        df.to_csv(getResultPath(basePath, routeNum, dirName) + "/"+ csv_file_name, encoding = 'utf-8-sig', index=False)
         print(df.head())
         
     
@@ -64,28 +66,58 @@ def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) : #routeNum : �
         else :
             print(str(es) + "\n\n")
 
-# Read All Files in PATH
-def getAllFiles(basePath):
-    onlyfiles = [f for f in os.listdir(basePath) if os.isfile(os.join(basePath, f)) and not f.startswith(".")]
-    return onlyfiles
-# Read All CSV Files in PATH
-def readAllCsv(basePath,files):
-    dataframes = [pd.read_csv(os.join(basePath,f)) for f in files]
-    return dataframes
-def concatAllDataframes(dataframes):
+# 경로를 받아서 모든 csv 파일의 리스트를 반환하는 함수
+def getAllCsvList(resultPath):
+    files = glob.glob(resultPath+'/*.csv')
+    return files
+
+# getAllFiles로 받아온 files를 병합
+def concatAllDataframes(resultPath):
+    files = getAllCsvList(resultPath)
+    dataframes = [pd.read_csv(f) for f in files]
+    # file이 없을 경우 메시지 출력하고 함수 종료
+    if len(dataframes) == 0 :
+        print("There is no file to merge")
+        return
     return pd.concat(dataframes, axis=0, ignore_index=True)
+
+# 병합할 시각 지정
+def judgeTimeToConcat(MERGE_HOUR):
+    if datetime.datetime.now().hour == MERGE_HOUR and datetime.datetime.now().minute == 0 : 
+        return True
+    else :
+        return False
+
+# 하루에 한번 병합 시각을 지정하여, 폴더 내의 병합 시행
+def concatAllDataframesPerDay(account_Id, routeNum, hourToConcat):
+    basePath = getBasePath(account_Id)
+    dirName=getNewDirName()
+    resultPath = getResultPath(basePath, routeNum, dirName)
+    concatCsvFileName = resultPath + "/" + datetime.datetime.now().strftime("%Y%m%d-%H") + "_" + routeNum + "_rTimeBusPos.csv"
+    if not os.path.exists(concatCsvFileName):
+        # if judgeTimeToConcat(hourToConcat) :
+        df = concatAllDataframes(resultPath)
+        df.to_csv(concatCsvFileName, encoding = 'utf-8-sig', index=False)
+        print(df.head())
+        print(f"All files are merged at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}")
+
 
 # ========== main
 
 def main():
-    account_Id = "bleubulblight" # changing the account ID when you use it on the other PC
+    account_Id = "hoonyong" # changing the account ID when you use it on the other PC
     busIdDict = {"1002":"233000140", "1008":"233000125"} #추후 matchingTable로 변환 예정
-    
+    hourToConcat = 3  # 몇시에 파일을 병합?
+
     for key,value in busIdDict.items() :
         reqTime = time.time()
         getapiCall(account_Id, 0, key, value, reqTime)
+
+        # 병합
+        concatAllDataframesPerDay(account_Id, key, hourToConcat)
     
-    #response = getapiUrlByParam()
+  
+
 
 if __name__ == '__main__':
     main()
