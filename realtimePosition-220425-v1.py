@@ -72,13 +72,10 @@ def apiCall(uri,filePrefix,callCnt,account_Id,reqtime):
     
     except Exception as es:
       if callCnt < 5:
-        print("\n\nRetry- callCnt: ", callCnt)
+        print("\n\nRetry- callCnt: ", str(callCnt))
         apiCall(uri,filePrefix,callCnt,account_ID2, reqtime)
       else:
-         setLoggerInfo(getResultPath(basePath, filePrefix, dirName), filePrefix)
-         logger = logging.getLogger("ErrLog")
-         logger.info(es)
-         sys.exit()
+         print("error")
 
     #f = open("myjson.json", 'w')
     #f.write(str(jsonObj["realtimePositionList"]))

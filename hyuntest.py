@@ -1,11 +1,17 @@
+def box(boxcontents, boxindex) :
+    print (box_in_box1() + str(box_in_box2(boxcontents, boxindex)))
+
+def box_in_box1() :
+    return "box"
+    
+def box_in_box2(boxcontents, boxindex) :
+    boxindex += 1
+    return boxcontents[boxindex], boxindex
+
 def main():
-    print("박현 테스트용 코드")
-    print("심훈용 수정 완료")
-    print("강승모 수정 완료")
-    print("이상한 기능 추가")
+    boxcontents = ["1","2"]
+    boxindex = 1
+    text, boxindex = box(boxcontents, boxindex)
     
-    print("hyun 다시 추가")
-    
-    print("temp")
 if __name__ == "__main__":
     main()
