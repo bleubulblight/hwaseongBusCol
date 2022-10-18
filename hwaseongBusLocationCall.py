@@ -29,8 +29,8 @@ def getBasePath(account_Id):
     return "/home/" + account_Id + "/ggBusJobs/realtimePosition" ## changing the account ID when you use it on the other PC
 def getResultPath(basePath, routeNum, routeId, dirName):
     return basePath+'/results_pos/'+routeNum+'_'+routeId+'/'+dirName
-def SavedftoCSVFile(df, basePath, routeNum, dirName, compTimeStr):
-    df.to_csv(getResultPath(basePath, routeNum, dirName)+"/"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+"_"+routeNum+"_rTimeBusPos_"+compTimeStr+'.csv', encoding='utf-8-sig', index=False)
+def SavedftoCSVFile(df, basePath, routeNum, routeId, dirName, compTimeStr):
+    df.to_csv(getResultPath(basePath, routeNum, routeId, dirName)+"/"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+"_"+routeNum+"_rTimeBusPos_"+compTimeStr+'.csv', encoding='utf-8-sig', index=False)
 
 def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) : #routeNum : 버스번호 , routeId : Api 서버 상 버스ID
     basePath = getBasePath(account_Id)
@@ -54,20 +54,20 @@ def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) : #routeNum : �
 
         # from json file to dataframe
         df = pd.DataFrame(json_data['response']['msgBody']["busLocationList"])
-        SavedftoCSVFile(df, basePath, routeNum, dirName, compTimeStr)
+        SavedftoCSVFile(df, basePath, routeNum, routeId, dirName, compTimeStr)
         print(df.head())
         
     except ValueError as ValueErrorMessage :
         if str(ValueErrorMessage) == 'If using all scalar values, you must pass an index' : # Case : if there is only 1 bus left (less than 2)
             df = pd.DataFrame(json_data['response']['msgBody']["busLocationList"], index=[0]) # type(df) is dict
-            SavedftoCSVFile(df, basePath, routeNum, dirName, compTimeStr)
+            SavedftoCSVFile(df, basePath, routeNum, routeId, dirName, compTimeStr)
             
     except Exception as es:
         if callCnt < 5 :
             print("\n\nRetry - callCnt :" , str(callCnt))
             getapiCall(account_Id, callCnt, routeNum, routeId, reqTime)
         else :
-            errorReport = open(getResultPath(basePath, routeNum, dirName)+"/"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+"_"+routeNum+"_rTimeBusPos_"+"errorReport.txt", 'w')
+            errorReport = open(getResultPath(basePath, routeNum, routeId, dirName)+"/"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+"_"+routeNum+"_rTimeBusPos_"+"errorReport.txt", 'w')
             errorReport.write(str(json_data['response']))
             errorReport.close()
             
@@ -80,9 +80,6 @@ def main():
     for key,value in busIdDict.items() :
         reqTime = time.time()
         getapiCall(account_Id, 0, key, value, reqTime)
-    
-    
-    #response = getapiUrlByParam()
 
 if __name__ == '__main__':
     main()
