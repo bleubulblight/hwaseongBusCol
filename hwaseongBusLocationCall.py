@@ -26,9 +26,9 @@ def getNewDirName():
 def getapiUrlByParam(routeId):
     return requests.get(apiDefaultUrl(), params=getParams(routeId))
 def getBasePath(account_Id):
-    return "/home/" + account_Id + "/gbisOpenApi/realtimePosition" ## changing the account ID when you use it on the other PC
-def getResultPath(basePath, routeNum, dirName):
-    return basePath+'/results_pos/'+routeNum+'/'+dirName
+    return "/home/" + account_Id + "/ggBusJobs/realtimePosition" ## changing the account ID when you use it on the other PC
+def getResultPath(basePath, routeNum, routeId, dirName):
+    return basePath+'/results_pos/'+routeNum+'_'+routeId+'/'+dirName
 def SavedftoCSVFile(df, basePath, routeNum, dirName, compTimeStr):
     df.to_csv(getResultPath(basePath, routeNum, dirName)+"/"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")+"_"+routeNum+"_rTimeBusPos_"+compTimeStr+'.csv', encoding='utf-8-sig', index=False)
 
@@ -37,8 +37,8 @@ def getapiCall(account_Id, callCnt, routeNum, routeId, reqTime) : #routeNum : ë²
     
     try :
         dirName=getNewDirName()
-        if not os.path.exists(getResultPath(basePath, routeNum, dirName)):
-            os.makedirs(getResultPath(basePath, routeNum, dirName))
+        if not os.path.exists(getResultPath(basePath, routeNum, routeId, dirName)):
+            os.makedirs(getResultPath(basePath, routeNum, routeId, dirName))
             
         callCnt += 1
         response = getapiUrlByParam(routeId)
