@@ -40,12 +40,10 @@ def fileMove(fileList, yesterdayPath):
     for filename in fileList:
         shutil.move(filename, yesterdayPath + os.path.basename(filename))  # shutil.move(A,B) = A를 B로 옮기기
 
-
-
 def getDawnCsvList(path):
     # 오늘 날짜이고, 03시 이전인 파일들만 리스트에 담아서 반환
     # 이때 날짜는 path의 날짜와 동일해야 함
-    todayDawnCsvList = [f for f in glob.glob(path + "/*.csv") if int(f.split('/')[-1].split('_')[0][9:11]) <= 3 and f.split('/')[-1].split('_')[0][:8] == path.split('/')[-2]]
+    todayDawnCsvList = [f for f in glob.glob(path + "/*.csv") if int(f.split('/')[-1].split('_')[0][9:11]) <= 3 and f.split('/')[-1].split('_')[0][:8] == path.split('/')[-2].replace('-','')]
     return todayDawnCsvList
 
 # 새벽 시간대의 파일들은 하루 전 폴더로 옮기기
