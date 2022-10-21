@@ -37,37 +37,40 @@ def isPathVaild(path):
 
 # 새벽 시간대에 수집된 csv파일들을 이전 날짜의 폴더로 옮기기 위한 함수
 def fileMove(fileList, yesterdayPath):
-
-    print(yesterdayPath)
     for filename in fileList:
-        shutil.move(filename, yesterdayPath + os.path.basename(filename))
+        shutil.move(filename, yesterdayPath + os.path.basename(filename))  # shutil.move(A,B) = A를 B로 옮기기
 
 
-# 경로를 받아서, 해당 폴더 내의 오전 03시 이전의 모든 csv 파일의 리스트를 반환하는 함수
+
 def getDawnCsvList(path):
-    # 파일명의 10번째,11번째 자리 값이 03보다 작은 csv 파일들을 리스트로 반환
-    dawnCsvList = [f for f in glob.glob(path + "/*.csv") if int(f.split('/')[-1].split('_')[0][9:11]) <= 3]
-    return dawnCsvList
+    # 오늘 날짜이고, 03시 이전인 파일들만 리스트에 담아서 반환
+    # 이때 날짜는 path의 날짜와 동일해야 함
+    todayDawnCsvList = [f for f in glob.glob(path + "/*.csv") if int(f.split('/')[-1].split('_')[0][9:11]) <= 3 and f.split('/')[-1].split('_')[0][:8] == path.split('/')[-2]]
+    return todayDawnCsvList
 
 # 새벽 시간대의 파일들은 하루 전 폴더로 옮기기
 def fileMovetoYesterdayBasedTodayDate(todayPath):
-    dawnCsvList = getDawnCsvList(todayPath)
-    if len(dawnCsvList) == 0 :
-        print("There is no file to move")
-        return 
-    yesterdayDate = getYesterdayStr()
-    yesterdayPath = '/'.join(todayPath.split('/')[:-2]) + '/' + yesterdayDate + '/'
+    todayDawnCsvList = getDawnCsvList(todayPath)
 
+    if len(todayDawnCsvList) == 0 :
+        print(f"해당 날짜에, 이전 날짜로 옮겨야 할 새벽 시간대 리스트가 존재하지 않음 : {'/'.join(todayPath.split('/')[-3:])}")
+        return 
+    
+    #todayPath에서 하루 빼서 어제의 날짜 추출
+    yesterdayDate = (datetime.datetime.strptime(todayPath.split('/')[-2], "%Y-%m-%d") - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterdayPath = '/'.join(todayPath.split('/')[:-2]) + '/' + yesterdayDate + '/'
     if not isPathVaild(yesterdayPath):
         os.mkdir(yesterdayPath)
-    fileMove(dawnCsvList, yesterdayPath)
+    fileMove(todayDawnCsvList, yesterdayPath)
+    print(f"fileMove from {'/'.join(todayPath.split('/')[-3:])} to {'/'.join(yesterdayPath.split('/')[-3:])} is complete!")
 
 def getAllCsvList(path):
     return [f for f in glob.glob(path + "/*.csv")]
 
 # dataframe 저장
 def saveDataframe(dataframe, destPath):
-    dataframe.to_csv(destPath, index=False)
+    # save dataframe to csv file, with name
+    dataframe.to_csv(destPath, index=False, encoding='utf-8-sig')
 
 # getAllCsvList로 받아온 files를 병합
 def concatAllDataframes(path):
@@ -80,10 +83,7 @@ def concatAllDataframes(path):
     
     dataframes = pd.concat(dataframes, ignore_index=True)
 
-    if len(dataframes) == 0 :
-        print("There is no file to merge")
-        return
-
+    return dataframes
 
 
 # # 병합할 시각 지정
@@ -113,8 +113,8 @@ def main():
     account_Id = "utlsyslab_10_admin" # changing the account ID when you use it on the other PC
     # busIdDict = {"1002":"233000140", "1008":"233000125"} #추후 matchingTable로 변환 예정
 
-    basePath = f"/home/{account_Id}/ggBusJobs/realtimePosition/results_pos/" # 추후 반복문
-    resultPath = f"/home/{account_Id}/ggBusJobs/realtimePosition/results_pos/results_merged/"
+    basePath = f"/home/{account_Id}/ggBusJobs/realtimePosition/results_pos/" # 참조 경로
+    resultPath = f"/home/{account_Id}/ggBusJobs/realtimePosition/results_pos/results_merged/" # 병합된 파일들이 저장될 경로
     basePath = f"/mnt/c/Users/hoonyong/OneDrive - 고려대학교/Coding/hwaseongBusCol/ggBusJobs/realtimePosition/results_pos/"
     resultPath = f"/mnt/c/Users/hoonyong/OneDrive - 고려대학교/Coding/hwaseongBusCol/ggBusJobs/realtimePosition/results_merged/"
     
@@ -130,31 +130,41 @@ def main():
         if not isPathVaild(resultPath + routeNum):
             os.mkdir(resultPath + routeNum)
 
-        # routeNumPath 아래 모든 하위 날짜 폴더들에 대해
+
+        # 1. 날짜 폴더를 참조하여, 해당 날짜의 새벽 (00시~03시) 파일들을 이전 날짜 폴더로 옮기기
         for date in os.listdir(routeNumPath):
             datePath = routeNumPath + date + "/"
 
-            # 1. 폴더 내부에 대해 dawn 파일들을 이전 날짜 폴더로 옮기기
             fileMovetoYesterdayBasedTodayDate(datePath)
         
+        # 2. 파일을 옮긴 후 날짜 폴더를 참조하여, 폴더 내부의 모든 csv 파일을 병합
         for date in os.listdir(routeNumPath):
+
+            mergeResultPath = resultPath + routeNum + '/' # 예시 : /realtimePosition/results_merged/1002_20000000/
+            mergeResultcsvName = mergeResultPath + date + "_merged_" + routeNum + "_rTimeBusPos.csv"
+            
+            # 이미 파일이 있으면 시간낭비 방지
+            if isPathVaild(mergeResultcsvName):
+                print(f"이미 병합된 파일이 있습니다.{'/'.join(mergeResultcsvName.split('/')[-3:])}")
+                continue
+
             datePath = routeNumPath + date + "/"
-            # 2. 폴더 내부의 모든 csv 파일을 병합
             try : 
                 dataframe = concatAllDataframes(datePath)
             except ValueError:
-                print(f"No files to concat : {datePath.split('/')[-3:]}")
+                print(f"No files to concat : {'/'.join(datePath.split('/')[-3:])}")
                 continue
 
             # 3. 병합된 파일을 results_merged 폴더에 저장
-            mergeResultPath = resultPath + routeNum + '/' + date + '/'
+   
             if not isPathVaild(mergeResultPath):
                 os.mkdir(mergeResultPath)
 
             try : 
-                saveDataframe(dataframe, mergeResultPath + '/' + date + 'merged_' + routeNum + '_rTimeBusPos.csv')
+                saveDataframe(dataframe, mergeResultcsvName)
+                print(f"File saved : {mergeResultcsvName}")
             except AttributeError:
-                print(f"No files to save : {datePath.split('/')[-3:]}")
+                print(f"No files to save : {'/'.join(datePath.split('/')[-3:])}")
                 continue
 
 if __name__ == '__main__':
