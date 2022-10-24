@@ -109,12 +109,11 @@ def concatAllDataframes(path):
 # 코드의 경로 : /home/utlsyslab_10_admin
 def main():
     account_Id = "utlsyslab_10_admin" # changing the account ID when you use it on the other PC
-    # busIdDict = {"1002":"233000140", "1008":"233000125"} #추후 matchingTable로 변환 예정
 
     basePath = f"/home/{account_Id}/ggBusJobs/realtimePosition/results_pos/" # 참조 경로
     resultPath = f"/home/{account_Id}/ggBusJobs/realtimePosition/results_pos/results_merged/" # 병합된 파일들이 저장될 경로
-    basePath = f"/mnt/c/Users/hoonyong/OneDrive - 고려대학교/Coding/hwaseongBusCol/ggBusJobs/realtimePosition/results_pos/"
-    resultPath = f"/mnt/c/Users/hoonyong/OneDrive - 고려대학교/Coding/hwaseongBusCol/ggBusJobs/realtimePosition/results_merged/"
+    # basePath = f"/mnt/c/Users/hoonyong/OneDrive - 고려대학교/Coding/hwaseongBusCol/ggBusJobs/realtimePosition/results_pos/"
+    # resultPath = f"/mnt/c/Users/hoonyong/OneDrive - 고려대학교/Coding/hwaseongBusCol/ggBusJobs/realtimePosition/results_merged/"
     
     # 결과 폴더 없으면 생성
     if not isPathVaild(resultPath):
@@ -142,9 +141,9 @@ def main():
             mergeResultcsvName = mergeResultPath + date + "_merged_" + routeNum + "_rTimeBusPos.csv"
             
             # 이미 파일이 있으면 시간낭비 방지
-            if isPathVaild(mergeResultcsvName):
-                print(f"이미 병합된 파일이 있습니다.{'/'.join(mergeResultcsvName.split('/')[-3:])}")
-                continue
+            # if isPathVaild(mergeResultcsvName):
+            #     print(f"이미 병합된 파일이 있습니다.{'/'.join(mergeResultcsvName.split('/')[-3:])}")
+            #     continue
 
             datePath = routeNumPath + date + "/"
             try : 
