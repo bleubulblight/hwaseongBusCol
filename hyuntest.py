@@ -5,7 +5,8 @@ def main():
     print("이상한 기능 추가")
     
     print("hyun 다시 추가")
-    
+    print("ys_repo push test")
+
     print("temp")
 if __name__ == "__main__":
     main()
